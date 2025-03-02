@@ -2187,4 +2187,11 @@ textarea.input {
     float: none;
     margin-top: 10px;
   }
+
+    .product-img img {
+        width: 100%; /* يجعل الصورة تمتد لعرض الحاوية بالكامل */
+        height: 200px; /* تحديد ارتفاع موحد */
+        object-fit: cover; /* يضمن عدم تشويه الصورة مع الحفاظ على ملء المساحة */
+    }
+
 }

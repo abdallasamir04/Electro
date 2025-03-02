@@ -18,9 +18,18 @@ namespace Electro_ECommerce.Controllers
         // GET: CategoriesController
         public ActionResult Index()
         {
-            //var categories = _context.Categories.ToList();
-            //return View(categories);
-            return View();
+			var products = from p in _context.Products
+						   join c in _context.Categories on p.CategoryId equals c.CategoryId
+						   select new
+						   {
+							   p.ProductId,
+							   p.Name,
+							   p.Price,
+							   p.ImagePath,
+							   CategoryName = c.Name 
+						   };
+			//var items = _context.Products.ToList();
+           return View(products);
         }
 
         public IActionResult Privacy()

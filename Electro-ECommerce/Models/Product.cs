@@ -20,8 +20,12 @@ public partial class Product
     public DateTime? CreatedAt { get; set; }
 
     public DateTime? UpdatedAt { get; set; }
+   
+    //add imeg
+    
+	public string? ImagePath { get; set; }
 
-    public virtual Category? Category { get; set; }
+	public virtual Category? Category { get; set; }
     public virtual ICollection<OrderDetail> OrderDetails { get; set; } = new List<OrderDetail>();
 
     public virtual ICollection<PromotionProduct> PromotionProducts { get; set; } = new List<PromotionProduct>();

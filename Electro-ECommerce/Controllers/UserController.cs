@@ -1,106 +1,152 @@
 ﻿using Electro_ECommerce.Models;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace Electro_ECommerce.Controllers
 {
     public class UserController : Controller
     {
-
-        //TechXpressDbContext db = new TechXpressDbContext();
-        //var categ = db.Categories.ToList();
         private readonly TechXpressDbContext _context;
 
         public UserController(TechXpressDbContext context)
         {
             _context = context;
         }
-        // GET: CategoriesController
-        public ActionResult Index()
+
+        
+        public async Task<IActionResult> Index()
         {
-            var Users = _context.Users.ToList();
-            return View(Users);
+            return View(await _context.Users.ToListAsync());
         }
 
-        // GET: CategoriesController/Details/5
-        public ActionResult Details(int id)
+        // عرض تفاصيل مستخدم معين
+        public async Task<IActionResult> Details(int? id)
         {
-            var User = _context.Users.Find(id);
-            if (User== null)
+            if (id == null || _context.Users == null)
+            {
                 return NotFound();
+            }
 
-            return View(User);
+            var user = await _context.Users.FirstOrDefaultAsync(m => m.UserId == id);
+            if (user == null)
+            {
+                return NotFound();
+            }
+
+            return View(user);
         }
-     
-        public ActionResult Create()
+
+        // عرض نموذج إنشاء مستخدم جديد
+        public IActionResult Create()
         {
             return View();
         }
 
-        
+        // حفظ مستخدم جديد في قاعدة البيانات
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public ActionResult Create(User User)
+        public async Task<IActionResult> Create([Bind("UserId,UserName,Email,PasswordHash,Role,ShippingAddress,PhoneNumber")] User user)
         {
-            
             if (ModelState.IsValid)
             {
-                _context.Users.Add(User);
-                _context.SaveChanges();
+                user.CreatedAt = DateTime.Now;
+                user.UpdatedAt = DateTime.Now;
+                _context.Add(user);
+                await _context.SaveChangesAsync();
                 return RedirectToAction(nameof(Index));
             }
-            return View(User);
+            return View(user);
         }
 
-        // GET: CategoriesController/Edit/5
-        public ActionResult Edit(int id)
+        // عرض نموذج تعديل مستخدم
+        public async Task<IActionResult> Edit(int? id)
         {
-            var User = _context.Users.Find(id);
-            if (User == null)
+            if (id == null || _context.Users == null)
+            {
                 return NotFound();
+            }
 
-            return View(User);
+            var user = await _context.Users.FindAsync(id);
+            if (user == null)
+            {
+                return NotFound();
+            }
+            return View(user);
         }
 
-        // POST: CategoriesController/Edit/5
+        // تحديث بيانات المستخدم
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public ActionResult Edit(int id, User User)
+        public async Task<IActionResult> Edit(int id, [Bind("UserId,UserName,Email,PasswordHash,Role,ShippingAddress,PhoneNumber")] User user)
         {
+            if (id != user.UserId)
+            {
+                return NotFound();
+            }
 
-            if ((id != User.UserId)) return BadRequest();
             if (ModelState.IsValid)
             {
-                _context.Users.Update(User);
-                _context.SaveChanges();
+                try
+                {
+                    user.UpdatedAt = DateTime.Now;
+                    _context.Update(user);
+                    await _context.SaveChangesAsync();
+                }
+                catch (DbUpdateConcurrencyException)
+                {
+                    if (!UserExists(user.UserId))
+                    {
+                        return NotFound();
+                    }
+                    else
+                    {
+                        throw;
+                    }
+                }
                 return RedirectToAction(nameof(Index));
             }
-            return View(User);
+            return View(user);
         }
 
-        // GET: CategoriesController/Delete/5
-        public ActionResult Delete(int id)
+        // عرض تأكيد حذف المستخدم
+        public async Task<IActionResult> Delete(int? id)
         {
-            var User = _context.Users.Find(id);
-            if (User == null)
+            if (id == null || _context.Users == null)
+            {
                 return NotFound();
+            }
 
-            return View(User);
+            var user = await _context.Users.FirstOrDefaultAsync(m => m.UserId == id);
+            if (user == null)
+            {
+                return NotFound();
+            }
 
+            return View(user);
         }
 
-        // POST: CategoriesController/Delete/5
-        [HttpPost, ActionName("delete")]
-
-        public ActionResult DeleteConfirmed(int id)
+        // تنفيذ الحذف
+        [HttpPost, ActionName("Delete")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeleteConfirmed(int id)
         {
-            var User = _context.Users.Find(id);
-            if (User == null) return NotFound();
-            _context.Users.Remove(User);
-            _context.SaveChanges();
+            if (_context.Users == null)
+            {
+                return Problem("Entity set 'ApplicationDbContext.Users'  is null.");
+            }
+            var user = await _context.Users.FindAsync(id);
+            if (user != null)
+            {
+                _context.Users.Remove(user);
+            }
+
+            await _context.SaveChangesAsync();
             return RedirectToAction(nameof(Index));
+        }
 
+        private bool UserExists(int id)
+        {
+            return (_context.Users?.Any(e => e.UserId == id)).GetValueOrDefault();
         }
     }
 }
-

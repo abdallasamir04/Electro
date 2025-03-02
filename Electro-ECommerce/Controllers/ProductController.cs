@@ -39,19 +39,58 @@ namespace Electro_ECommerce.Controllers
             return View();
         }
 
+        //[HttpPost]
+        //[ValidateAntiForgeryToken]
+        //public IActionResult Create(Product product)
+        //{
+        //    if (ModelState.IsValid)
+        //    {
+        //        _productRepository.Add(product);
+        //        _productRepository.SaveChanges();
+        //        return RedirectToAction(nameof(Index));
+        //    }
+        //    ViewBag.Categories = _categoryRepository.GetAll().ToList();
+        //    return View(product);
+        //}
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult Create(Product product)
+        public async Task<IActionResult> Create(Product product, IFormFile? ProductImage = null)
         {
             if (ModelState.IsValid)
             {
+                if (ProductImage != null && ProductImage.Length > 0)
+                {
+                    // تحديد المسار داخل wwwroot/images
+                    var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot/images");
+                    var uniqueFileName = Guid.NewGuid().ToString() + "_" + ProductImage.FileName;
+                    var filePath = Path.Combine(uploadsFolder, uniqueFileName);
+
+                    // التأكد من أن المجلد موجود، وإذا لم يكن كذلك يتم إنشاؤه
+                    if (!Directory.Exists(uploadsFolder))
+                    {
+                        Directory.CreateDirectory(uploadsFolder);
+                    }
+
+                    // حفظ الصورة في المسار المحدد
+                    using (var stream = new FileStream(filePath, FileMode.Create))
+                    {
+                        await ProductImage.CopyToAsync(stream);
+                    }
+
+                    // حفظ المسار في قاعدة البيانات
+                    product.ImagePath = "/images/" + uniqueFileName;
+                }
+
                 _productRepository.Add(product);
                 _productRepository.SaveChanges();
                 return RedirectToAction(nameof(Index));
             }
+
             ViewBag.Categories = _categoryRepository.GetAll().ToList();
             return View(product);
         }
+
+
 
         public IActionResult Edit(int id)
         {

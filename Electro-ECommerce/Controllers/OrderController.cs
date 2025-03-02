@@ -1,83 +1,114 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using Electro_ECommerce.Models;
+using Electro_ECommerce.Repositories;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using System.Threading.Tasks;
 
 namespace Electro_ECommerce.Controllers
 {
-    public class OrderController : Controller
+    public class OrdersController : Controller
     {
-        // GET: OrderController
+        private readonly IRepository<Order> _orderRepository;
+
+        public OrdersController(IRepository<Order> orderRepository)
+        {
+            _orderRepository = orderRepository ?? throw new ArgumentNullException(nameof(orderRepository));
+        }
+
         public ActionResult Index()
         {
-            return View();
+            var orders = _orderRepository.GetAll();
+            return View(orders);
         }
 
-        // GET: OrderController/Details/5
         public ActionResult Details(int id)
         {
-            return View();
+            var order = _orderRepository.GetById(id);
+            if (order == null)
+                return NotFound();
+
+            return View(order);
         }
 
-        // GET: OrderController/Create
         public ActionResult Create()
         {
             return View();
         }
 
-        // POST: OrderController/Create
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public ActionResult Create(IFormCollection collection)
+        public async Task<IActionResult> Create(Order order)
         {
-            try
+            if (ModelState.IsValid)
             {
+                _orderRepository.Add(order);
+                _orderRepository.SaveChanges();
                 return RedirectToAction(nameof(Index));
             }
-            catch
-            {
-                return View();
-            }
+            return View(order);
         }
 
-        // GET: OrderController/Edit/5
         public ActionResult Edit(int id)
         {
-            return View();
+            var order = _orderRepository.GetById(id);
+            if (order == null)
+                return NotFound();
+
+            return View(order);
         }
 
-        // POST: OrderController/Edit/5
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public ActionResult Edit(int id, IFormCollection collection)
+        public async Task<IActionResult> Edit(int id, Order order)
         {
-            try
+            if (id != order.OrderId) return BadRequest();
+            if (ModelState.IsValid)
             {
+                try
+                {
+                    order.UpdatedAt = DateTime.Now;
+                    _orderRepository.Update(order);
+                    _orderRepository.SaveChanges();
+                }
+                catch (DbUpdateConcurrencyException)
+                {
+                    if (!OrderExists(order.OrderId))
+                    {
+                        return NotFound();
+                    }
+                    else
+                    {
+                        throw;
+                    }
+                }
                 return RedirectToAction(nameof(Index));
             }
-            catch
-            {
-                return View();
-            }
+            return View(order);
         }
 
-        // GET: OrderController/Delete/5
         public ActionResult Delete(int id)
         {
-            return View();
+            var order = _orderRepository.GetById(id);
+            if (order == null)
+                return NotFound();
+
+            return View(order);
         }
 
-        // POST: OrderController/Delete/5
-        [HttpPost]
+        [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
-        public ActionResult Delete(int id, IFormCollection collection)
+        public ActionResult DeleteConfirmed(int id)
         {
-            try
-            {
-                return RedirectToAction(nameof(Index));
-            }
-            catch
-            {
-                return View();
-            }
+            var order = _orderRepository.GetById(id);
+            if (order == null) return NotFound();
+            _orderRepository.Delete(order);
+            _orderRepository.SaveChanges();
+            return RedirectToAction(nameof(Index));
+        }
+
+        private bool OrderExists(int id)
+        {
+            return _orderRepository.Find(e => e.OrderId == id).Any();
         }
     }
 }
