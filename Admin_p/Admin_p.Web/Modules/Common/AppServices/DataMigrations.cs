@@ -29,9 +29,9 @@ public class DataMigrations(ITypeSource typeSource,
         }
     }
 
-    // <summary>
+     //<summary>
     //Automatically creates a database for the template if it doesn't already exists.
-    // You might delete this method to disable auto create functionality.
+    //You might delete this method to disable auto create functionality.
     // </summary>
     private void EnsureDatabase(string databaseKey)
     {
